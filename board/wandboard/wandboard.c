@@ -213,7 +213,23 @@ int board_phy_config(struct phy_device *phydev)
 	return 0;
 }
 
-#if defined(CONFIG_VIDEO_IPUV3)
+struct i2c_pads_info i2c1_pad_info = {
+        .scl = {
+                .i2c_mode = MX6_PAD_EIM_D21__I2C1_SCL
+                        | MUX_PAD_CTRL(I2C_PAD_CTRL),
+                .gpio_mode = MX6_PAD_EIM_D21__GPIO3_IO21
+                        | MUX_PAD_CTRL(I2C_PAD_CTRL),
+                .gp = IMX_GPIO_NR(3, 21)
+        },
+        .sda = {
+                .i2c_mode = MX6_PAD_EIM_D28__I2C1_SDA
+                        | MUX_PAD_CTRL(I2C_PAD_CTRL),
+                .gpio_mode = MX6_PAD_EIM_D28__GPIO3_IO28
+                        | MUX_PAD_CTRL(I2C_PAD_CTRL),
+                .gp = IMX_GPIO_NR(3, 28)
+        }
+};
+
 struct i2c_pads_info i2c2_pad_info = {
 	.scl = {
 		.i2c_mode = MX6_PAD_KEY_COL3__I2C2_SCL
@@ -230,6 +246,14 @@ struct i2c_pads_info i2c2_pad_info = {
 		.gp = IMX_GPIO_NR(4, 13)
 	}
 };
+
+static int detect_i2c(struct display_info_t const *dev)
+{
+        return (0 == i2c_set_bus_num(dev->bus)) &&
+                        (0 == i2c_probe(dev->addr));
+}
+
+#if defined(CONFIG_VIDEO_IPUV3)
 
 static iomux_v3_cfg_t const fwadapt_7wvga_pads[] = {
 	MX6_PAD_DI0_DISP_CLK__IPU1_DI0_DISP_CLK,
@@ -267,12 +291,6 @@ static iomux_v3_cfg_t const fwadapt_7wvga_pads[] = {
 static void do_enable_hdmi(struct display_info_t const *dev)
 {
 	imx_enable_hdmi_phy();
-}
-
-static int detect_i2c(struct display_info_t const *dev)
-{
-	return (0 == i2c_set_bus_num(dev->bus)) &&
-			(0 == i2c_probe(dev->addr));
 }
 
 static void enable_fwadapt_7wvga(struct display_info_t const *dev)
@@ -395,6 +413,7 @@ int board_init(void)
 	/* address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
 
+	setup_i2c(0, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c1_pad_info);
 	setup_i2c(1, CONFIG_SYS_I2C_SPEED, 0x7f, &i2c2_pad_info);
 
 	return 0;
